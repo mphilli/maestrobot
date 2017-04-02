@@ -168,7 +168,7 @@ class Bot:
         elif command == "!add" and username in self.admins:
             if len(arguments.split(" ")) > 1:
                 timeout_length = arguments.split(" ")[0].lower()
-                phrase = arguments.split(" ")[1].lower()
+                phrase = " ".join(arguments.split(" ")[1])
                 self.add_prohib(timeout_length, phrase)
                 self.send_message(channel, "phrase added")
         elif command == "!del" and username in self.admins:
