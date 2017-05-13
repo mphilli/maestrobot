@@ -182,6 +182,26 @@ class Bot:
                 self.del_prohib(phrase)
                 self.send_message(channel, "phrase deleted")
 
+        if command == "!delcommand" and username in self.admins:
+            # delete a command
+            delete = arguments.split(" ")[0].lower()
+            if delete != "!addcommand" and delete != "!delcommand":
+                delete_message = "command not found"
+                if delete in self.commands:
+                    self.del_command(delete)
+                    delete_message = "command deleted"
+                self.send_message(channel, delete_message)
+        elif command == "!add" and username in self.admins:
+            if len(arguments.split(" ")) > 1:
+                timeout_length = arguments.split(" ")[0].lower()
+                phrase = " ".join(arguments.split(" ")[1:])
+                self.add_prohib(timeout_length, phrase)
+                self.send_message(channel, "phrase added")
+        elif command == "!del" and username in self.admins:
+            phrase = arguments.split(" ")[0].lower()
+            self.del_prohib(phrase)
+            self.send_message(channel, "phrase deleted")
+
     def send_message(self, channel, message):
         """sends a chat message to the target channel"""
         self.s.send(('PRIVMSG ' + '#' + channel + ' :' + str(message) + '\r\n').encode("utf-8"))
