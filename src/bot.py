@@ -142,7 +142,8 @@ class Bot:
             if self.commands[command][1] == "FUNC":
                 func_name = self.commands[command][0]
                 event = getattr(util, func_name)(arguments)
-                # add new commands
+                if type(event) == list and func_name == "timeout_user":
+                    event = str(event[0])
                 if func_name == "new_command" and len(event) == 4:
                     chat_message = "command already exists; command updated"
                     if event[0] not in self.commands:
@@ -150,31 +151,36 @@ class Bot:
                     self.add_command(event)
                     self.send_message(channel, chat_message)
                 else:
-                    self.send_message(channel, event)
+                    if type(event) == list:
+                        for e in event:
+                            self.send_message(channel, e)
+                    else:
+                        self.send_message(channel, event)
             elif event != "":
                 self.send_message(channel, event[0])
 
     def handle_local_commands(self, channel, command, message, username):
         arguments = re.sub("^" + command, "", message).lstrip()
-        if command == "!delcommand" and username in self.admins:
-            # delete a command
-            delete = arguments.split(" ")[0].lower()
-            if delete != "!addcommand" and delete != "!delcommand":
-                delete_message = "command not found"
-                if delete in self.commands:
-                    self.del_command(delete)
-                    delete_message = "command deleted"
-                self.send_message(channel, delete_message)
-        elif command == "!add" and username in self.admins:
-            if len(arguments.split(" ")) > 1:
-                timeout_length = arguments.split(" ")[0].lower()
-                phrase = arguments.split(" ")[1].lower()
-                self.add_prohib(timeout_length, phrase)
-                self.send_message(channel, "phrase added")
-        elif command == "!del" and username in self.admins:
-            phrase = arguments.split(" ")[0].lower()
-            self.del_prohib(phrase)
-            self.send_message(channel, "phrase deleted")
+        if username in self.admins:
+            if command == "!delcommand":
+                # delete a command
+                delete = arguments.split(" ")[0].lower()
+                if delete != "!addcommand" and delete != "!delcommand":
+                    delete_message = "command not found"
+                    if delete in self.commands:
+                        self.del_command(delete)
+                        delete_message = "command deleted"
+                    self.send_message(channel, delete_message)
+            elif command == "!add":
+                if len(arguments.split(" ")) > 1:
+                    timeout_length = arguments.split(" ")[0]
+                    phrase = arguments.split(" ")[1]
+                    self.add_prohib(timeout_length, phrase)
+                    self.send_message(channel, "phrase added")
+            elif command == "!del":
+                phrase = arguments.split(" ")[0]
+                self.del_prohib(phrase)
+                self.send_message(channel, "phrase deleted")
 
     def send_message(self, channel, message):
         """sends a chat message to the target channel"""
@@ -296,4 +302,6 @@ class LogDate:
         self.second = str(self.date_log.second)
         if len(self.second) == 1:
             self.second = "0" + self.second
+        if len(self.minute) == 1:
+            self.minute = "0" + self.minute		
         self.timestamp = '[' + self.hour + ':' + self.minute + ':' + self.second + ']'

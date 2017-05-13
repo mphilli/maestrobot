@@ -23,17 +23,32 @@ def timeout(username, time):
             (str(time) + ' ' + str(username) + ' for prohibited phrase')]
 
 
+def timeout_user(arguments):
+    if len(arguments.split(' ')) > 1:
+        time, username = arguments.split(' ')[0], arguments.split(' ')[1]
+        return timeout(username, time)
+
+
+def untimeout(arguments):
+    if len(arguments.split(' ')) > 0:
+        username = arguments.split(' ')[0]
+        return str("/untimeout " + username)
+
+
 def new_command(arguments):
     """forms message into a list containing command information"""
-    command, event = arguments.split(' ', 1)
-    command_list = ["" for i in range(4)]
-    if command.startswith("!"):
-        command_list[0] = command
-        command_list[1] = event
-        if command.startswith("!!"):
-            command_list[0] = command[1:]
-            command_list[3] = "ADMIN"
-        return command_list
+    if len(arguments.split(' ')) > 1:
+        command, event = arguments.split(' ', 1)
+        c_list = ["" for i in range(4)]
+        if command.startswith("!"):
+            c_list[0] = command.lower()
+            c_list[1] = event
+            if command.startswith("!!"):
+                c_list[0] = command[1:]
+                c_list[3] = "ADMIN"
+            print(c_list)
+            return c_list
+    return "!addcommand requires a command name and an argument"
 
 
 def google(arguments):

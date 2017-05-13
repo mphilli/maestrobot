@@ -1,1 +1,5 @@
-{"!test": ["/me I'm working! :) TEST", "", ""], "!google": ["google", "FUNC", ""], "!addcommand": ["new_command", "FUNC", "ADMIN"]}
+{"!test": ["/me I'm working! :) TEST", "", ""],
+  "!google": ["google", "FUNC", ""],
+  "!addcommand": ["new_command", "FUNC", "ADMIN"],
+  "!timeout": ["timeout_user", "FUNC", "ADMIN"],
+  "!untimeout": ["untimeout", "FUNC", "ADMIN"]}
