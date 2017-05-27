@@ -1,70 +1,93 @@
-"""
-A collection of functions called by the bot
-These should be either in response to a !command from chat or for using /commands
-Includes a simple function for timing-out a user as an example.
-Other commands https://help.twitch.tv/customer/portal/articles/659095-chat-moderation-commands
-"""
+import datetime
 
 
-def timeout(username, time):
-    """
-    Timeout a user for a given number of minutes
-    Returns the timeout command and the chat message
-    """
-    if time[-1] == "m":  # minutes
-        time_out = str(int(time[:-1])*60)
-    elif time[-1] == "h":  # hours 
-        time_out = str(int(time[:-1])*60*60)
-    elif time[-1] == "d":  # days
-        time_out = str(int(time[:-1])*60*60*24)
-    else:
-        time_out = time[:-1]  # assumed to be seconds (ex: 4s)
-    return [('/timeout ' + username + ' ' + time_out),
-            (str(time) + ' ' + str(username) + ' for prohibited phrase')]
+class LogDate:
+
+    def __init__(self):
+        """Used to create file titles for logs (each chat log file corresponds to a channel and a day),
+        Also used to create timestamps for messages and whispers."""
+        self.months = {'01': 'January', '02': 'February', '03': 'March', '04': 'April', '05': 'May', '06': 'June',
+                       '07': 'July', '08': 'August', '09': 'September', '10': 'October', '11': 'November',
+                       '12': 'December'}
+        self.date_log = datetime.datetime.now()
+        self.date = str(self.date_log).split(" ")[0]
+        self.month_num = self.date.split("-")[1]
+        self.month = self.months[self.month_num]
+        self.day = str(self.date.split("-")[2])
+        self.year = str(self.date.split("-")[0])
+        self.hour = str(self.date_log.hour)
+        self.minute = str(self.date_log.minute)
+        self.second = str(self.date_log.second)
+        if len(self.second) == 1:
+            self.second = "0" + self.second
+        if len(self.minute) == 1:
+            self.minute = "0" + self.minute
+        self.timestamp = '[' + self.hour + ':' + self.minute + ':' + self.second + ']'
 
 
-def timeout_user(arguments):
-    if len(arguments.split(' ')) > 1:
-        time, username = arguments.split(' ')[0], arguments.split(' ')[1]
-        return timeout(username, time)
+class PhiQueue:
+    def __init__(self, initials=None, maxsize=None):
+        """A simple queue-type class"""
+        self.maxsize = self.config_max(maxsize)
+        self.items = []
+        if initials:
+            self.put(initials)
+
+    def __repr__(self):
+        return str(self.items)
+
+    def __getitem__(self, i):
+        return self.items[i]
+
+    @staticmethod
+    def config_max(mx):
+        if type(mx) == int:
+            return abs(mx)
+        return None
+
+    def is_empty(self):
+        return len(self.items) == 0
+
+    def index(self, i):
+        return self.items.index(i)
+
+    def is_full(self):
+        is_full = False
+        if self.maxsize:
+            if len(self.items) >= self.maxsize:
+                is_full = True
+        else:
+            if len(self.items) >= 536870912:
+                is_full = True
+        return is_full
+
+    def pop(self, i=1):
+        self.items = self.items[i:]
+
+    def put(self, i):
+
+        if i and type(i) == list:
+            for item in i:
+                self.put(item)
+        elif not i:
+            self.items = []
+        elif not self.maxsize or self.size() < self.maxsize:
+            self.items.append(i)
+        else:
+            self.pop()
+            self.put(i)
+
+    def set_maxsize(self, i, reset=True):
+        self.maxsize = self.config_max(i)
+        if reset:
+            items = self.items[:]  # copy original item list
+            del self.items[:]
+            self.put(items)
+
+    def size(self):
+        return len(self.items)
 
 
-def untimeout(arguments):
-    if len(arguments.split(' ')) > 0:
-        username = arguments.split(' ')[0]
-        return str("/untimeout " + username)
-
-
-def new_command(arguments):
-    """forms message into a list containing command information"""
-    if len(arguments.split(' ')) > 1:
-        command, event = arguments.split(' ', 1)
-        c_list = ["" for i in range(4)]
-        if command.startswith("!"):
-            c_list[0] = command.lower()
-            c_list[1] = event
-            if command.startswith("!!"):
-                c_list[0] = command[1:]
-                c_list[3] = "ADMIN"
-            print(c_list)
-            return c_list
-    return "!addcommand requires a command name and an argument"
-
-
-def google(arguments):
-    """
-    a sample function: creates a google link to google a list of search term arguments
-    example !google neat thing
-    bot: http://google.com/search?q=neat+thing
-    """
-    arg_list = arguments.split(' ')
-    url_base = "http://google.com/search?q="
-    for token in arg_list:
-        if token != "":
-            url_base += token + "+"
-    if url_base.endswith("="):
-        return ""
-    return url_base[:-1]
-
-
-# add other functions here (and to command list)
+if __name__ == "__main__":
+    pq = PhiQueue()
+    print(pq)

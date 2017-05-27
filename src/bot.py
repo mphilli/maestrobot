@@ -1,11 +1,12 @@
-import datetime
 import os
 import re
 import select
 import socket
 import json
 import time
-import utilities as util
+import commands
+from utilities import LogDate
+from utilities import PhiQueue
 
 
 class Bot:
@@ -30,6 +31,7 @@ class Bot:
         self.time_restrict = 0    # number of seconds before another bot message can be sent (doesn't apply to admins)
         self.local_commands = ['!delcommand', '!add', '!del']
         self.last = 0             # the last time a message was sent (used for time-restricting commands)
+        self.history = PhiQueue(maxsize=300000)  # a list of the last 300,000 messages
 
     def establish_connection(self):
         """establish the connection to Twitch chat channels"""
@@ -79,6 +81,7 @@ class Bot:
     def handle_message(self, fmessage):
         """Handles various operations based on the latest received chat message (logging, commands, etc)"""
         channel, timestamp, username, message = fmessage.split(' ', 3)
+        self.history.put((channel, timestamp, username, message))
         username = username[:-1]
         if not self.admins:  # testing should always be done be approved users
             self.admins = []
@@ -105,7 +108,7 @@ class Bot:
         if self.is_moderator:
             for phrase in self.prohibited:
                 if phrase in message and (username not in self.admins or username != channel):
-                    timeout_messages = util.timeout(username, self.prohibited[phrase])
+                    timeout_messages = commands.timeout(username, self.prohibited[phrase])
                     for message in timeout_messages:
                         self.send_message(channel, message)
 
@@ -141,7 +144,7 @@ class Bot:
         if permission or username in self.admins:
             if self.commands[command][1] == "FUNC":
                 func_name = self.commands[command][0]
-                event = getattr(util, func_name)(arguments)
+                event = getattr(commands, func_name)(arguments)
                 if type(event) == list and func_name == "timeout_user":
                     event = str(event[0])
                 if func_name == "new_command" and len(event) == 4:
@@ -303,25 +306,4 @@ class Bot:
             current_file.write(message + '\n')
 
 
-class LogDate:
 
-    def __init__(self):
-        """Used to create file titles for logs (each chat log file corresponds to a channel and a day),
-        Also used to create timestamps for messages and whispers."""
-        self.months = {'01': 'January', '02': 'February', '03': 'March', '04': 'April', '05': 'May', '06': 'June',
-                       '07': 'July', '08': 'August', '09': 'September', '10': 'October', '11': 'November',
-                       '12': 'December'}
-        self.date_log = datetime.datetime.now()
-        self.date = str(self.date_log).split(" ")[0]
-        self.month_num = self.date.split("-")[1]
-        self.month = self.months[self.month_num]
-        self.day = str(self.date.split("-")[2])
-        self.year = str(self.date.split("-")[0])
-        self.hour = str(self.date_log.hour)
-        self.minute = str(self.date_log.minute)
-        self.second = str(self.date_log.second)
-        if len(self.second) == 1:
-            self.second = "0" + self.second
-        if len(self.minute) == 1:
-            self.minute = "0" + self.minute		
-        self.timestamp = '[' + self.hour + ':' + self.minute + ':' + self.second + ']'
